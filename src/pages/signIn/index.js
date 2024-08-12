@@ -22,7 +22,7 @@ const SignIn = () => {
         </AreaInput>
 
         <AreaInput>
-          <Input placeholder="Your Password" />
+          <Input placeholder="Your Password" secureTextEntry={true} />
         </AreaInput>
 
         <SubmitButton activeOpacity={0.6}>
