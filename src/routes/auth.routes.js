@@ -16,8 +16,19 @@ const AuthRoutes = () => {
             }}
             />
             <AuthStack.Screen
-            name="SignIn"
-            component={SignIn}
+            name="SignUp"
+            component={SignUp}
+            options={{
+                animation: "slide_from_bottom",
+                headerStyle:{
+                    backgroundColor: '#3b3bdf',
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#00b94a'
+                },
+                headerTintColor: '#fff',
+                headerTitle: 'Back',
+                headerBackTitleVisible: false,
+            }}
             />
         </AuthStack.Navigator>
     )
