@@ -1,94 +1,112 @@
-import React, { useEffect, useState } from "react";
-import { Text, View } from "react-native";
-import { Area, Background, List, ListBalance, Title } from "./style";
-import Header from "../../components/Header";
+import React, {useEffect, useState} from 'react';
+import {Modal, Text, View} from 'react-native';
+import {Area, Background, List, ListBalance, Title} from './style';
+import Header from '../../components/Header';
 
 import Material from 'react-native-vector-icons/MaterialIcons';
 
-import { format } from 'date-fns';
-import api from "../../services/api";
+import {format} from 'date-fns';
+import api from '../../services/api';
 
-import { useIsFocused } from '@react-navigation/native';
-import BalanceItem from "../../components/BalanceItem";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import HistoryList from "../../components/HistoryList";
+import {useIsFocused} from '@react-navigation/native';
+import BalanceItem from '../../components/BalanceItem';
+import {TouchableOpacity} from 'react-native-gesture-handler';
+import HistoryList from '../../components/HistoryList';
+import CalendarModal from '../../components/CalendarModal';
 
 const Home = () => {
-    const isFocused = useIsFocused();
-    const [listBalance, setListBalance] = useState([]);
-    const [dateMovement, setDateMovement] = useState(new Date());
-    const [listMovements, setListMovements] = useState([]);
+  const isFocused = useIsFocused();
+  const [listBalance, setListBalance] = useState([]);
+  const [dateMovement, setDateMovement] = useState(new Date());
+  const [listMovements, setListMovements] = useState([]);
 
-    useEffect(() => {
-        let isActive = true;
+  const [modalVisible, setModalVisible] = useState(false);
 
-        const getMovement = async () => {
-            let dateFormated = format(dateMovement, 'dd/MM/yyyy');
+  useEffect(() => {
+    let isActive = true;
 
-            const receives = await api.get('receives',{
-                params:{
-                    date: dateFormated,
-                }
-            })
-            
-            const balance = await api.get('balance', {
-                params:{
-                    date: dateFormated,
-                }
-            })
-            if(isActive){
-                setListMovements(receives.data);
-                setListBalance(balance.data);
-            }
+    const getMovement = async () => {
+      let date = new Date(dateMovement);
+      let onlyDate = date.valueOf() + date.getTimezoneOffset() * 60 * 1000;
+      let dateFormated = format(onlyDate, 'dd/MM/yyyy'); // Prevent Timezone Errors
 
-            return () => isActive = false;
-        };
+      const receives = await api.get('receives', {
+        params: {
+          date: dateFormated,
+        },
+      });
 
-        getMovement();
-    }, [isFocused,dateMovement])
+      const balance = await api.get('balance', {
+        params: {
+          date: dateFormated,
+        },
+      });
+      if (isActive) {
+        setListMovements(receives.data);
+        setListBalance(balance.data);
+      }
 
-    const handleDelete = async (id) => {
-        try {
-            await api.delete('receives/delete',{
-                params:{
-                    item_id: id
-                }
-            });
+      return () => (isActive = false);
+    };
 
-            setDateMovement(new Date());
-        } catch (error) {
-            console.log(error)
-        }
+    getMovement();
+  }, [isFocused, dateMovement]);
+
+  const handleDelete = async id => {
+    try {
+      await api.delete('receives/delete', {
+        params: {
+          item_id: id,
+        },
+      });
+
+      setDateMovement(new Date());
+    } catch (error) {
+      console.log(error);
     }
+  };
 
-    return(
-        <Background>
-            <Header title="My account activity" />
+  const filterDateMovement = (dateSelected) => {
+    setDateMovement(dateSelected);
+  };
 
-            <ListBalance
-            data={listBalance}
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={ item => item.tag }
-            renderItem={({item}) => <BalanceItem data={item}/>}
-            />
+  return (
+    <Background>
+      <Header title="My account activity" />
 
-            <Area>
-                <TouchableOpacity>
-                    <Material name="event" color="#121212" size={30}/>
-                </TouchableOpacity>
-                <Title>Recent Transactions</Title>
-            </Area>
+      <ListBalance
+        data={listBalance}
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={item => item.tag}
+        renderItem={({item}) => <BalanceItem data={item} />}
+      />
 
-            <List
-            data={listMovements}
-            keyExtractor={ item => item.id}
-            renderItem={({item}) => <HistoryList data={item} deleteItem={handleDelete}/>}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{paddingBottom: 20}}
-            />
-        </Background>
-    )
-}
+      <Area>
+        <TouchableOpacity onPress={() => setModalVisible(true)}>
+          <Material name="event" color="#121212" size={30} />
+        </TouchableOpacity>
+        <Title>Recent Transactions</Title>
+      </Area>
+
+      <List
+        data={listMovements}
+        keyExtractor={item => item.id}
+        renderItem={({item}) => (
+          <HistoryList data={item} deleteItem={handleDelete} />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{paddingBottom: 20}}
+      />
+
+      <Modal visible={modalVisible} animationType="fade" transparent={true}>
+        <CalendarModal
+          setVisible={() => setModalVisible(false)}
+          handleFilter={filterDateMovement}
+        />
+      </Modal>
+    </Background>
+  );
+};
 
 export default Home;
